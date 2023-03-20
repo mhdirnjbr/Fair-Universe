@@ -8,6 +8,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import RidgeClassifier
 from sklearn import tree
+from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
@@ -23,6 +24,7 @@ MODEL_NB = "NB"
 MODEL_LDA = "LDA"
 MODEL_RR = "RR"
 MODEL_TREE = "Tree"
+MODEL_MLP = "MLP"
 MODEL_RF = "RF"
 MODEL_SVM = "SVM"
 MODEL_KN = "KN"
@@ -59,6 +61,8 @@ class Model:
             self.clf = None 
         if self.model_name == MODEL_NB:
             self.clf = GaussianNB()
+        if self.model_name == MODEL_MLP:
+            self.clf = MLPClassifier()
         if self.model_name == MODEL_LDA:
             self.clf = LinearDiscriminantAnalysis()
         if self.model_name == MODEL_RR:
@@ -68,7 +72,7 @@ class Model:
         if self.model_name == MODEL_RF:
             self.clf = RandomForestClassifier()
         if self.model_name == MODEL_SVM:
-            self.clf = SVC()
+            self.clf = SVC(probability = True,kernel='rbf', gamma=20)
         if self.model_name == MODEL_KN:
             self.clf = KNeighborsClassifier(n_neighbors=5)
         if self.model_name == MODEL_ADA:
@@ -79,17 +83,17 @@ class Model:
 
     def _preprocess(self):
         
-        scaler = preprocessing.StandardScaler()
-        self.X_train = scaler.fit_transform(self.X_train)
-        self.X_test_preproc = scaler.transform(self.X_test)
+        #scaler = preprocessing.StandardScaler()
+        #self.X_train = scaler.fit_transform(self.X_train)
+        #self.X_test_preprocessed = scaler.transform(self.X_test)
         
 
-        # train_mean = np.mean(self.X_train).values
-        # test_mean = np.mean(self.X_test).values
+        train_mean = np.mean(self.X_train).values
+        test_mean = np.mean(self.X_test).values
 
-        # X_test_preprocessed = self.X_test + train_mean - test_mean
+        X_test_preprocessed = self.X_test + train_mean - test_mean
 
-        return self.X_test_preproc
+        return X_test_preprocessed
 
     def _augment_data(self):
 
@@ -167,7 +171,7 @@ class Model:
             X = self._preprocess()
         
        
-        if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
+        if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_MLP or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
             return self.clf.predict_proba(X)[:, 1]
         else:
             return self.clf.decision_function(X) 

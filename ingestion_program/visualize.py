@@ -179,7 +179,11 @@ def visualize_decision(ax, title, model):
         epsilon = 0.001
         response = -np.log((1/response+epsilon)-1)
     else:
-        response = model.clf.decision_function(X_grid)
+        if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
+            response = model.clf.predict_proba(X_grid)[:, 1]   
+        else :
+            
+            response = model.clf.decision_function(X_grid)
 
     
 
