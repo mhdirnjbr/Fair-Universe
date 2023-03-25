@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import cos,sin,radians
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from sklearn.metrics import roc_curve
 
 
 
@@ -252,4 +253,22 @@ def visualize_decicion_boundary(name, settings, result, train_sets, test_sets):
         plt.suptitle(title, fontsize=15)
         plt.show()
 
+def visualize_roc_curve(name, settings, result, train_sets, test_sets):
+    # Train set
+    X_Trains = [train_set["data"] for train_set in train_sets]
+    Y_Trains = [train_set["labels"] for train_set in train_sets]
 
+    # Test set
+    X_Tests = [test_set["data"] for test_set in test_sets]
+    Y_Tests = [test_set["labels"] for test_set in test_sets]
+    for index, model in enumerate(result["trained_models"]):
+        if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
+            y_scores = model.clf.predict_proba(X_Tests[index])[:,1]
+            fpr, tpr, thresholds = roc_curve(Y_Tests[index], y_scores)
+            plt.plot(fpr, tpr)
+            plt.plot([0, 1], [0, 1], linestyle='--')
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.rcParams['figure.figsize'] = [5, 3]
+            plt.title('ROC Curve '+ name +' case - ' + str(index+1))
+            plt.show()
