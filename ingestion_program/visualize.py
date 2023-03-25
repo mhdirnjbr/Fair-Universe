@@ -180,7 +180,7 @@ def visualize_decision(ax, title, model):
         epsilon = 0.001
         response = -np.log((1/response+epsilon)-1)
     else:
-        if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
+        if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'SVM' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
             response = model.clf.predict_proba(X_grid)[:, 1]   
         else :
             
@@ -262,7 +262,7 @@ def visualize_roc_curve(name, settings, result, train_sets, test_sets):
     X_Tests = [test_set["data"] for test_set in test_sets]
     Y_Tests = [test_set["labels"] for test_set in test_sets]
     for index, model in enumerate(result["trained_models"]):
-        if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
+        if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'SVM' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
             y_scores = model.clf.predict_proba(X_Tests[index])[:,1]
             fpr, tpr, thresholds = roc_curve(Y_Tests[index], y_scores)
             plt.plot(fpr, tpr)

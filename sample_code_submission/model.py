@@ -171,7 +171,7 @@ class Model:
             X = self._preprocess()
         
        
-        if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_MLP or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
+        if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_SVM or self.model_name == MODEL_MLP or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
             return self.clf.predict_proba(X)[:, 1]
         else:
             return self.clf.decision_function(X) 
