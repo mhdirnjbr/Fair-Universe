@@ -272,3 +272,35 @@ def visualize_roc_curve(name, settings, result, train_sets, test_sets):
             plt.rcParams['figure.figsize'] = [5, 3]
             plt.title('ROC Curve '+ name +' case - ' + str(index+1))
             plt.show()
+            
+def visualize_score(df_train, df_test, obc, title):
+    N = len(df_train)
+    score_train = df_train.avg.values
+    score_test = df_test.avg.values
+
+    std_err_train = df_train.std_err.values
+    std_err_test = df_test.std_err.values
+    names = df_train.index.values
+
+    ind = np.arange(N)
+    width = 0.2
+
+    plt.figure(figsize=(13,8))
+    plt.bar(ind, score_train, yerr=std_err_train, width=width, label='train')
+    plt.bar(ind + width, score_test,yerr=std_err_test, width=width, label='test')
+    plt.bar(ind + 2*width, std_err_train, width=width, label='train_error')
+    plt.bar(ind + 3*width, std_err_test, width=width, label='test_error')
+
+    plt.xlabel('Baselines')
+    plt.ylabel(title)
+    plt.title(title)
+
+    plt.xticks(ind + 1.5*width, names)
+    plt.xticks(rotation=30)
+
+    plt.ylim(0,1)
+
+    # plt.legend(loc='best')
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.tight_layout()
+    plt.show()
