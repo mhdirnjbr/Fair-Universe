@@ -263,8 +263,7 @@ class Model:
     def predict(self, X=None):
         if X is None:
             X = self.X_test
-        X_Tests = torch.tensor(X.values)
-        X_Tests = X_Tests.float()
+        
 
         if self.model_name == MODEL_CONSTANT:
             return np.zeros(X.shape[0])
@@ -275,6 +274,8 @@ class Model:
             else:
                 X = self._preprocess_scaling()
         if self.model_name == MODEL_DANN:
+            X_Tests = torch.tensor(X.values)
+            X_Tests = X_Tests.float()
             self.clf.eval()
             with torch.no_grad():
                 label_output, _ = self.clf(X_Tests, alpha=0)
