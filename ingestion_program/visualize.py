@@ -4,6 +4,9 @@ from math import cos,sin,radians
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import roc_curve
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 
 def get_params(setting):
@@ -181,7 +184,14 @@ def visualize_decision(ax, title, model):
         response = -np.log((1/response+epsilon)-1)
     else:
         if model.model_name == 'Tree' or model.model_name == 'MLP' or model.model_name == 'SVM' or model.model_name == 'RF' or model.model_name == 'KN' or model.model_name == 'ADA':
-            response = model.clf.predict_proba(X_grid)[:, 1]   
+            response = model.clf.predict_proba(X_grid)[:, 1] 
+        elif model.model_name == 'DANN' :
+            X_Tests = torch.tensor(X_grid).float()
+            model.clf.eval()
+            with torch.no_grad():
+                label_output, _ = model.clf(X_Tests, alpha=0)
+                proba = torch.softmax(label_output, dim=1)[:, 1]
+            response = proba
         else :
             
             response = model.clf.decision_function(X_grid)

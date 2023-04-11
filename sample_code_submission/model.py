@@ -15,6 +15,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import AdaBoostClassifier
 
 from sklearn import preprocessing
+from dann import DANN
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 
 MODEL_CONSTANT = "Constant"
@@ -27,6 +31,7 @@ MODEL_RF = "RF"
 MODEL_SVM = "SVM"
 MODEL_KN = "KN"
 MODEL_ADA = "ADA"
+MODEL_DANN = "DANN"
 
 
 PREPROCESS_TRANSLATION = "translation"
@@ -41,12 +46,12 @@ AUGMENTATION_TRANSLATION_SCALING = "translation-scaling"
 class Model:
 
     def __init__(self, 
-                 model_name=MODEL_NB, 
+                 model_name=MODEL_ADA, 
                  X_train=None, 
                  Y_train=None, 
                  X_test=None, 
                  preprocessing=False, 
-                 preprocessing_method = PREPROCESS_TRANSLATION,
+                 preprocessing_method = PREPROCESS_SCALING,
                  data_augmentation=False,
                  data_augmentation_type=AUGMENTATION_TRANSLATION
         ):
@@ -80,11 +85,13 @@ class Model:
         if self.model_name == MODEL_RF:
             self.clf = RandomForestClassifier()
         if self.model_name == MODEL_SVM:
-            self.clf = SVC(probability = True,kernel='rbf', gamma=20)
+            self.clf = SVC(probability = True,kernel='rbf', gamma=1)
         if self.model_name == MODEL_KN:
             self.clf = KNeighborsClassifier(n_neighbors=5)
         if self.model_name == MODEL_ADA:
             self.clf = AdaBoostClassifier(n_estimators=100)
+        if self.model_name == MODEL_DANN:
+            self.clf = DANN(input_dim=2, hidden_dim=100, output_dim=2, domain_dim=1)
 
         self.is_trained=False
 
@@ -219,27 +226,44 @@ class Model:
 
         return augmented_data, augmented_labels
         
-    def fit(self, X=None, y=None):
+    def fit(self, X=None, y=None,Xt = None):
 
         if self.model_name != MODEL_CONSTANT:
             
+                
             if X is None:
                 X = self.X_train
             if y is None:
                 y = self.Y_train
-
+            if Xt is None :
+                Xt = self.X_test
+            X_Trains = torch.tensor(X.values).float()
+            Y_Trains = torch.tensor(y, dtype=torch.long)
+            X_Tests = torch.tensor(Xt.values).float()
             if self.data_augmentation:
                 if self.data_augmentation_type == AUGMENTATION_TRANSLATION:
                     X, y = self._augment_data_translation()
                 else:
                     X, y = self._augment_data_scaling()
-    
-            self.clf.fit(X, y)
+            if self.model_name == MODEL_DANN:
+                optimizer = optim.Adam(self.clf.parameters(), lr=0.001)
+
+                n_epochs = 100
+                for epoch in range(n_epochs):
+                    self.clf.train()
+                    optimizer.zero_grad()
+                    loss = self.clf.get_loss(X_Trains, Y_Trains, X_Tests, alpha=0.5)
+                    loss.backward()
+                    optimizer.step()
+            else :
+                self.clf.fit(X, y)
             self.is_trained=True
 
     def predict(self, X=None):
         if X is None:
             X = self.X_test
+        X_Tests = torch.tensor(X.values)
+        X_Tests = X_Tests.float()
 
         if self.model_name == MODEL_CONSTANT:
             return np.zeros(X.shape[0])
@@ -249,13 +273,20 @@ class Model:
                 X = self._preprocess_translation()
             else:
                 X = self._preprocess_scaling()
-
-        return self.clf.predict(X)
+        if self.model_name == MODEL_DANN:
+            self.clf.eval()
+            with torch.no_grad():
+                label_output, _ = self.clf(X_Tests, alpha=0)
+                pred = torch.argmax(label_output, dim=1)
+            return pred
+        else :
+            return self.clf.predict(X)
 
     def decision_function(self, X=None):
         
         if X is None:
             X = self.X_test
+        
 
         if self.model_name == MODEL_CONSTANT:
             return np.zeros(X.shape[0])
@@ -268,6 +299,13 @@ class Model:
 
         if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_SVM or self.model_name == MODEL_MLP or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
             return self.clf.predict_proba(X)[:, 1]
+        elif self.model_name == MODEL_DANN :
+            X_Tests = torch.tensor(X.values).float()
+            self.clf.eval()
+            with torch.no_grad():
+                label_output, _ = self.clf(X_Tests, alpha=0)
+                proba = torch.softmax(label_output, dim=1)[:, 1]
+            return proba
         else:
             return self.clf.decision_function(X) 
         

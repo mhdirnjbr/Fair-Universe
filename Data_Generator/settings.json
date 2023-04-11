@@ -1,0 +1,24 @@
+{
+    "problem_dimension" : 2,
+    "total_number_of_events" : 1000,
+    "probability_class_signal" : 0.2, 
+    "probability_class_background" : 0.8, 
+    "signal_distribution": {
+        "name": "Gaussian",
+        "mu" : [2,2],
+        "sigma" : [1, 1],
+        "cut" : [[2,4], []]
+    },
+    "background_distribution": {
+        "name": "Gaussian",
+        "mu" : [6,6],
+        "sigma" : [1, 1],
+        "cut" : [[6,8], []]
+    },
+    "systematics" : {
+        "name" : "Ben_New",
+        "allowed_dimension" : 2,
+        "sigma_bias" : [1,1],
+        "mu_bias" : [1,1]
+    }
+}
