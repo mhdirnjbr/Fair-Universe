@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from math import cos,sin,radians
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import roc_curve
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -19,22 +19,50 @@ def get_params(setting):
     z_magnitude = setting["z_magnitude"]
     alpha = setting["alpha"]
     z = np.multiply([round(cos(radians(alpha)) ,2), round(sin(radians(alpha)), 2)], z_magnitude)
+
+    scaling_factor = setting["scaling_factor"]
     case = setting["case"]
+
+    box_center = sg_mu#setting["box_center"]
+    box_l = setting["box_l"]
 
     train_comment = setting["train_comment"]
     test_comment = setting["test_comment"]
 
-    return case, bg_mu, sg_mu, z, train_comment, test_comment
+    return case, bg_mu, sg_mu, z, scaling_factor, train_comment, test_comment, box_center, box_l
+
+def visulaize_box(ax, box_center, box_l):
+
+    if box_l > 0:
+        margin = .1
+
+        box_x = [box_center[0]-box_l-margin, box_center[0]+box_l+margin]
+        box_y = [box_center[1]-box_l-margin, box_center[1]+box_l+margin]
+        
+        width = box_x[1] - box_x[0]
+        height = box_y[1] - box_y[0]
+
+        ax.add_patch(
+            patches.Rectangle(
+                xy=(box_x[0], box_y[0]),  # point of origin.
+                width=width, height=height, linewidth=1,
+                color='green', fill=True, alpha=0.3))
 
 def visualize_clock(ax, setting):
 
-    case, bg_mu, sg_mu, z, _, _ = get_params(setting)
+    case, bg_mu, sg_mu, z, sf, _, _, _, _ = get_params(setting)
 
     ax.set_xlim([-8,8])
     ax.set_ylim([-8,8])
     b_c = np.multiply(bg_mu, 2)
     s_c = np.multiply(sg_mu, 2)
     z_c = np.multiply(z, 2)
+
+
+
+    if sf > 1:
+        ax.plot(b_c[0], b_c[1], 'bo', markersize=40, alpha=0.3)
+        ax.plot(s_c[0], s_c[1], 'ro', markersize=20, alpha=0.3)
 
     ax.plot(b_c[0], b_c[1], 'bo', markersize=20)
     ax.plot([b_c[0], s_c[0]], [b_c[1], s_c[1]], linestyle='-.', color="k", label="separation direction")
@@ -45,9 +73,16 @@ def visualize_clock(ax, setting):
     ax.legend()
     ax.set_title("Case - {}".format(case))
 
-def visualize_train(ax, settings, train_set, comment=True):
+def visualize_train(ax, settings, train_set, comment=True, xy_limit=None):
 
-    _, bg_mu, sg_mu, _, train_comment, _ = get_params(settings)
+    _, bg_mu, sg_mu, _, _, train_comment, _, box_center, box_l = get_params(settings)
+
+
+    visulaize_box(ax, box_center, box_l)
+
+    limit = [-8,8]
+    if xy_limit is not None:
+        limit =  xy_limit
 
     signal_mask = train_set["labels"] == 1
     background_mask = train_set["labels"] == 0
@@ -55,14 +90,17 @@ def visualize_train(ax, settings, train_set, comment=True):
     ax.scatter(train_set["data"][signal_mask]["x1"], train_set["data"][signal_mask]["x2"], s=10, c="r", alpha=0.7, label="Signal")
     ax.set_xlabel("x1")
     ax.set_ylabel("x2")
-    ax.set_xlim([-8,8])
-    ax.set_ylim([-8,8])
+    ax.set_xlim(limit)
+    ax.set_ylim(limit)
     ax.axhline(y=0, color='g', linestyle='-.')
     ax.axvline(x=0, color='g', linestyle='-.')
     ax.plot(bg_mu[0], bg_mu[1], marker="x", markersize=10, color="k", label="bg center")
     ax.plot(sg_mu[0], sg_mu[1], marker="x", markersize=10, color="k", label="sg center")
     ax.plot([bg_mu[0],sg_mu[0]],[bg_mu[1], sg_mu[1]], "--+", markersize=10, color="k", label="separation direction")
+    
     ax.legend()
+
+ 
     if comment:
         ax.set_title("Train set\n" +train_comment)
     else:
@@ -70,26 +108,52 @@ def visualize_train(ax, settings, train_set, comment=True):
 
 def visualize_test(ax, settings, test_set):
 
-    _, bg_mu, sg_mu, z, _, test_comment = get_params(settings)
+    _, bg_mu, sg_mu, z, sf, _, test_comment, box_center, box_l = get_params(settings)
+
+    visulaize_box(ax, box_center, box_l)
 
     signal_mask = test_set["labels"] == 1
     background_mask = test_set["labels"] == 0
-    ax.scatter(test_set["data"][background_mask]["x1"],test_set["data"][background_mask]["x2"], s=10,c="b", alpha=0.7, label="Background")
-    ax.scatter(test_set["data"][signal_mask]["x1"], test_set["data"][signal_mask]["x2"], s=10, c="r", alpha=0.7, label="Signal")
+
+
+
+
+    bg_c , sg_c = [], []
+    if sf > 1:
+        bg_c = np.mean(test_set["data"][background_mask])
+        sg_c = np.mean(test_set["data"][signal_mask])
+    else:
+        bg_c = [bg_mu[0]+z[0], bg_mu[1]+z[1]]
+        sg_c = [sg_mu[0]+z[0], sg_mu[1]+z[1]]
+
+
+
+
+    sg_data = test_set["data"][signal_mask]
+    bg_data = test_set["data"][background_mask]
+
+   
+    test_set["data"][background_mask]
+
+
+
+    ax.scatter(bg_data["x1"],bg_data["x2"], s=10,c="b", alpha=0.7, label="Background")
+    ax.scatter(sg_data["x1"], sg_data["x2"], s=10, c="r", alpha=0.7, label="Signal")
     ax.set_xlabel("x1")
     ax.set_ylabel("x2")
     ax.set_xlim([-8,8])
     ax.set_ylim([-8,8])
     ax.axhline(y=0, color='g', linestyle='-.')
     ax.axvline(x=0, color='g', linestyle='-.')
-    ax.plot(bg_mu[0]+z[0], bg_mu[1]+z[1], marker="x", markersize=10, color="k", label="bg center")
-    ax.plot(sg_mu[0]+z[0], sg_mu[1]+z[1], marker="x", markersize=10, color="k", label="sg center")
-    ax.plot([bg_mu[0]+z[0],sg_mu[0]+z[0]],[bg_mu[1]+z[1], sg_mu[1]+z[1]], "--+", markersize=10, color="k", label="separation direction")
+    ax.plot(bg_c[0], bg_c[1], marker="x", markersize=10, color="k", label="bg center")
+    ax.plot(sg_c[0], sg_c[1], marker="x", markersize=10, color="k", label="sg center")
+    ax.plot([bg_c[0],sg_c[0]],[bg_c[1], sg_c[1]], "--+", markersize=10, color="k", label="separation direction")
     ax.legend()
     ax.set_title("Test set\n" +test_comment)
 
-
-    if z[0] == 0:
+    if z[0] == 0 and z[1] == 0:
+        pass
+    elif z[0] == 0:
         ax.axvline(x=0.25, color='r', linestyle='-.', label="translation direction")
     elif z[1] == 0:
         ax.axhline(y=0.25, color='r', linestyle='-.', label="translation direction")
@@ -109,20 +173,33 @@ def visualize_test(ax, settings, test_set):
     ax.legend()
     ax.set_title("Test set\nz = {}\n{}".format(z, test_comment))
 
-def visualize_augmented(ax, settins, augmented_set):
+def visualize_augmented(ax, settings, train_set, comment=True, xy_limit=None):
 
-    signal_mask = augmented_set["labels"] == 1
-    background_mask = augmented_set["labels"] == 0
-    ax.scatter(augmented_set["data"][background_mask]["x1"],augmented_set["data"][background_mask]["x2"], s=10,c="b", label="Background")
-    ax.scatter(augmented_set["data"][signal_mask]["x1"], augmented_set["data"][signal_mask]["x2"], s=10, c="r", label="Signal")
+    _, bg_mu, sg_mu, _, _, train_comment, _, _, _ = get_params(settings)
+
+    limit = [-8,8]
+    if xy_limit is not None:
+        limit =  xy_limit
+
+    signal_mask = train_set["labels"] == 1
+    background_mask = train_set["labels"] == 0
+    ax.scatter(train_set["data"][background_mask]["x1"],train_set["data"][background_mask]["x2"], s=10,c="b", alpha=0.7, label="Background")
+    ax.scatter(train_set["data"][signal_mask]["x1"], train_set["data"][signal_mask]["x2"], s=10, c="r", alpha=0.7, label="Signal")
     ax.set_xlabel("x1")
     ax.set_ylabel("x2")
-    ax.set_title("Augmented set")
-    ax.set_xlim([-8,8])
-    ax.set_ylim([-8,8])
-    ax.axhline(y=0, color='g', linestyle='--')
-    ax.axvline(x=0, color='g', linestyle='--')
+    ax.set_xlim(limit)
+    ax.set_ylim(limit)
+    ax.axhline(y=0, color='g', linestyle='-.')
+    ax.axvline(x=0, color='g', linestyle='-.')
+    # ax.plot(bg_mu[0], bg_mu[1], marker="x", markersize=10, color="k", label="bg center")
+    # ax.plot(sg_mu[0], sg_mu[1], marker="x", markersize=10, color="k", label="sg center")
+    # ax.plot([bg_mu[0],sg_mu[0]],[bg_mu[1], sg_mu[1]], "--+", markersize=10, color="k", label="separation direction")
     ax.legend()
+
+    if comment:
+        ax.set_title("Augmented set\n" +train_comment)
+    else:
+        ax.set_title("Augmented set")
     
 def visualize_clocks(settings):
 
@@ -148,19 +225,18 @@ def visualize_data(settings, train_set, test_set):
     visualize_test(axs[2], settings, test_set)
     plt.show()
 
-def visualize_augmented_data(settings, train_set, augmented_set):
+def visualize_augmented_data(settings, train_set, augmented_set, augment_limit=None):
 
-    fig = plt.figure(constrained_layout=True, figsize=(12, 4))
+    fig = plt.figure(constrained_layout=True, figsize=(12, 4.5))
     axs = fig.subplots(1, 3, sharex=True)
 
     # Clock
     visualize_clock(axs[0],settings)
     # train
-    visualize_train(axs[1], settings, train_set, comment=False)
+    visualize_train(axs[1], settings, train_set, comment=False, xy_limit=augment_limit)
     # visualize_augmented
-    visualize_train(axs[2], settings, augmented_set)
+    visualize_augmented(axs[2], settings, augmented_set, comment=False, xy_limit=augment_limit)
     plt.show()
-
 def visualize_decision(ax, title, model):
 
     grid_resolution=100

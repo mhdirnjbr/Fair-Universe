@@ -41,7 +41,6 @@ class DANN(nn.Module):
         src_size = x_src.size(0)
         tgt_size = x_tgt.size(0)
 
-        # create binary labels for domain classification
         src_labels = torch.zeros(src_size, self.domain_dim)
         tgt_labels = torch.ones(tgt_size, self.domain_dim)
         domain_labels = torch.cat([src_labels, tgt_labels], dim=0)

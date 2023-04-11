@@ -91,7 +91,7 @@ class Model:
         if self.model_name == MODEL_ADA:
             self.clf = AdaBoostClassifier(n_estimators=100)
         if self.model_name == MODEL_DANN:
-            self.clf = DANN(input_dim=2, hidden_dim=100, output_dim=2, domain_dim=1)
+            self.clf = DANN(input_dim=2, hidden_dim=100, output_dim=2, domain_dim=2)
 
         self.is_trained=False
 
@@ -237,15 +237,16 @@ class Model:
                 y = self.Y_train
             if Xt is None :
                 Xt = self.X_test
-            X_Trains = torch.tensor(X.values).float()
-            Y_Trains = torch.tensor(y, dtype=torch.long)
-            X_Tests = torch.tensor(Xt.values).float()
+            
             if self.data_augmentation:
                 if self.data_augmentation_type == AUGMENTATION_TRANSLATION:
                     X, y = self._augment_data_translation()
                 else:
                     X, y = self._augment_data_scaling()
             if self.model_name == MODEL_DANN:
+                X_Trains = torch.tensor(X.values).float()
+                Y_Trains = torch.tensor(y, dtype=torch.long)
+                X_Tests = torch.tensor(Xt.values).float()
                 optimizer = optim.Adam(self.clf.parameters(), lr=0.001)
 
                 n_epochs = 100
