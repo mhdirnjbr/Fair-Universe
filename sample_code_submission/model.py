@@ -43,6 +43,7 @@ PREPROCESS_SCALING = "scaling"
 
 AUGMENTATION_TRANSLATION = "translation"
 AUGMENTATION_TRANSLATION_SCALING = "translation-scaling"
+AUGMENTATION_BOX = "box"
 
 #------------------------------
 # Baseline Model
@@ -53,7 +54,7 @@ class Model:
                  model_name=MODEL_ADA, 
                  X_train=None, 
                  Y_train=None, 
-                 X_test=None, 
+                 X_test=None,
                  preprocessing=False, 
                  preprocessing_method = PREPROCESS_SCALING,
                  data_augmentation=False,
@@ -69,6 +70,7 @@ class Model:
         self.preprocessing_method = preprocessing_method
         self.data_augmentation = data_augmentation
         self.data_augmentation_type = data_augmentation_type
+        self.box = None
 
         self._set_model()
 
@@ -233,6 +235,77 @@ class Model:
 
 
         return augmented_data, augmented_labels
+    
+    def _augment_data_box(self):
+
+        X = np.array(self.X_train)
+        Y = np.array(self.Y_train)
+        center = np.mean(X, axis=0)
+    
+        closest_point = X[np.argmin(np.sum((X - center)**2, axis=1))]
+    
+        max_x, min_x = np.max(X[:, 0]), np.min(X[:, 0])
+        max_y, min_y = np.max(X[:, 1]), np.min(X[:, 1])
+
+        num_points = 1000
+
+        max_distance = np.max(np.linalg.norm(X - closest_point, axis=1))
+        min_distance = np.min(np.linalg.norm(X - closest_point, axis=1))
+
+        generated_points = []
+        for i in range(num_points):
+            distance = np.random.uniform(min_distance, max_distance)
+
+            angle = np.random.uniform(0, 2 * np.pi)
+
+            x = closest_point[0] + distance * np.cos(angle)
+            y = closest_point[1] + distance * np.sin(angle)
+
+            d = np.absolute(np.linalg.norm([x, y] - closest_point))
+            proba = 1 / (d + 10)
+            decider = np.random.choice([0, 1], p=[1-proba, proba])
+            if (x > max_x or x < min_x or y > max_y or y < min_y) and decider == 0:
+                generated_points.append([x, y])
+
+        generated_points = np.array(generated_points)
+
+        augmented_data = np.vstack((X, generated_points))
+        augmented_labels = np.hstack((np.array(Y), np.zeros(len(generated_points))))
+        
+        X = np.array(self.X_test)
+        center = np.mean(X, axis=0)
+    
+        closest_point = X[np.argmin(np.sum((X - center)**2, axis=1))]
+    
+        max_x, min_x = np.max(X[:, 0]), np.min(X[:, 0])
+        max_y, min_y = np.max(X[:, 1]), np.min(X[:, 1])
+
+        num_points = 1000
+
+        max_distance = np.max(np.linalg.norm(X - closest_point, axis=1))
+        min_distance = np.min(np.linalg.norm(X - closest_point, axis=1))
+
+        generated_points = []
+        for i in range(num_points):
+            distance = np.random.uniform(min_distance, max_distance)
+
+            angle = np.random.uniform(0, 2 * np.pi)
+
+            x = closest_point[0] + distance * np.cos(angle)
+            y = closest_point[1] + distance * np.sin(angle)
+
+            d = np.absolute(np.linalg.norm([x, y] - closest_point))
+            proba = 1 / (d + 10)
+            decider = np.random.choice([0, 1], p=[1-proba, proba])
+            if (x > max_x or x < min_x or y > max_y or y < min_y) and decider == 0:
+                generated_points.append([x, y])
+
+        generated_points = np.array(generated_points)
+
+        augmented_data_test = np.vstack((X, generated_points))
+
+
+        return augmented_data, augmented_labels, augmented_data_test, len(generated_points)
         
     def fit(self, X=None, y=None,Xt = None):
 
@@ -249,12 +322,20 @@ class Model:
             if self.data_augmentation:
                 if self.data_augmentation_type == AUGMENTATION_TRANSLATION:
                     X, y = self._augment_data_translation()
+                elif self.data_augmentation_type == AUGMENTATION_BOX:
+                    X, y, Xt, l = self._augment_data_box()
+                    self.X_test = pd.DataFrame(data = Xt, columns = ["x1","x2"])
+                    self.box = l
                 else:
                     X, y = self._augment_data_scaling()
             if self.model_name == MODEL_DANN:
-                X_Trains = torch.tensor(X.values).float()
+                if self.data_augmentation_type == AUGMENTATION_BOX:
+                    X_Trains = torch.tensor(X).float()
+                    X_Tests = torch.tensor(Xt).float()
+                else:
+                    X_Trains = torch.tensor(X.values).float()
+                    X_Tests = torch.tensor(Xt.values).float()
                 Y_Trains = torch.tensor(y, dtype=torch.long)
-                X_Tests = torch.tensor(Xt.values).float()
                 optimizer = optim.Adam(self.clf.parameters(), lr=0.001)
 
                 n_epochs = 100
@@ -271,16 +352,20 @@ class Model:
     def predict(self, X=None):
         if X is None:
             X = self.X_test
-        
+            if self.preprocessing:
+                if self.preprocessing_method == PREPROCESS_TRANSLATION:
+                    X = self._preprocess_translation()
+                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                        X = X[:-self.box]
+                else:
+                    X = self._preprocess_scaling()
+                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                        X = X[:-self.box]
 
         if self.model_name == MODEL_CONSTANT:
             return np.zeros(X.shape[0])
 
-        if self.preprocessing:
-            if self.preprocessing_method == PREPROCESS_TRANSLATION:
-                X = self._preprocess_translation()
-            else:
-                X = self._preprocess_scaling()
+        
         if self.model_name == MODEL_DANN:
             X_Tests = torch.tensor(X.values)
             X_Tests = X_Tests.float()
@@ -296,16 +381,20 @@ class Model:
         
         if X is None:
             X = self.X_test
-        
+            if self.preprocessing:
+                if self.preprocessing_method == PREPROCESS_TRANSLATION:
+                    X = self._preprocess_translation()
+                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                        X = X[:-self.box]
+                else:
+                    X = self._preprocess_scaling()
+                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                        X = X[:-self.box]
 
         if self.model_name == MODEL_CONSTANT:
             return np.zeros(X.shape[0])
         
-        if self.preprocessing:
-            if self.preprocessing_method == PREPROCESS_TRANSLATION:
-                X = self._preprocess_translation()
-            else:
-                X = self._preprocess_scaling()
+        
 
         if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_SVM or self.model_name == MODEL_MLP or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
             return self.clf.predict_proba(X)[:, 1]

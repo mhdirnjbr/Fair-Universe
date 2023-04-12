@@ -122,3 +122,50 @@ def get_augmented_data_scaling(train_set, test_set):
                 "data" : augmented_data,
                 "labels" : augmented_labels
         }
+    
+def generate_augmented_dataset_box_estimate(train_sets):
+    
+    Xdf = [train_set["data"] for train_set in train_sets]
+    Yar = [train_set["labels"] for train_set in train_sets]
+    sets_augmented = []
+    for i in range(len(Xdf)):
+        X = np.array(Xdf[i])
+        Y = np.array(Yar[i])
+        center = np.mean(X, axis=0)
+    
+        closest_point = X[np.argmin(np.sum((X - center)**2, axis=1))]
+    
+        max_x, min_x = np.max(X[:, 0]), np.min(X[:, 0])
+        max_y, min_y = np.max(X[:, 1]), np.min(X[:, 1])
+
+        num_points = 1000
+
+        max_distance = np.max(np.linalg.norm(X - closest_point, axis=1))
+        min_distance = np.min(np.linalg.norm(X - closest_point, axis=1))
+
+        generated_points = []
+        for i in range(num_points):
+            distance = np.random.uniform(min_distance, max_distance)
+
+            angle = np.random.uniform(0, 2 * np.pi)
+
+            x = closest_point[0] + distance * np.cos(angle)
+            y = closest_point[1] + distance * np.sin(angle)
+
+            d = np.absolute(np.linalg.norm([x, y] - closest_point))
+            proba = 1 / (d + 10)
+            decider = np.random.choice([0, 1], p=[1-proba, proba])
+            if (x > max_x or x < min_x or y > max_y or y < min_y) and decider == 0:
+                generated_points.append([x, y])
+
+        generated_points = np.array(generated_points)
+
+        augmented_data = np.vstack((X, generated_points))
+        augmented_labels = np.hstack((np.array(Y), np.zeros(len(generated_points))))
+        augmented_data2 = pd.DataFrame(augmented_data, columns=['x1','x2'])
+        sets_augmented.append({
+        "data" : augmented_data2, 
+        "labels" : augmented_labels
+    })
+    
+    return sets_augmented
