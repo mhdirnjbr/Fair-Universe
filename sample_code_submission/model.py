@@ -13,6 +13,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import AdaBoostClassifier
+from GDA import GaussianDiscriminativeAnalysisClassifier
+from GNB import GaussianNaiveBayesClassifier
 
 from sklearn import preprocessing
 from dann import DANN
@@ -31,6 +33,8 @@ MODEL_RF = "RF"
 MODEL_SVM = "SVM"
 MODEL_KN = "KN"
 MODEL_ADA = "ADA"
+MODEL_GDA = "GDA"
+MODEL_GNB = "GNB"
 MODEL_DANN = "DANN"
 
 
@@ -90,6 +94,10 @@ class Model:
             self.clf = KNeighborsClassifier(n_neighbors=5)
         if self.model_name == MODEL_ADA:
             self.clf = AdaBoostClassifier(n_estimators=100)
+        if self.model_name == MODEL_GDA:
+            self.clf = GaussianDiscriminativeAnalysisClassifier()
+        if self.model_name == MODEL_GNB:
+            self.clf = GaussianNaiveBayesClassifier()
         if self.model_name == MODEL_DANN:
             self.clf = DANN(input_dim=2, hidden_dim=100, output_dim=2, domain_dim=2)
 
@@ -301,6 +309,12 @@ class Model:
 
         if self.model_name == MODEL_NB or self.model_name == MODEL_TREE or self.model_name == MODEL_SVM or self.model_name == MODEL_MLP or self.model_name == MODEL_RF or self.model_name == MODEL_KN or self.model_name == MODEL_ADA:
             return self.clf.predict_proba(X)[:, 1]
+        elif self.model_name == MODEL_GDA or self.model_name == MODEL_GNB:
+            predicted_score = self.clf.predict_proba(X)
+            # Transform with log
+            epsilon = np.finfo(float).eps
+            predicted_score = -np.log((1/(predicted_score+epsilon))-1)
+            return predicted_score[:, 1]
         elif self.model_name == MODEL_DANN :
             X_Tests = torch.tensor(X.values).float()
             self.clf.eval()
