@@ -1,19 +1,16 @@
 ,train_set 1,train_set 2,train_set 3,train_set 4,train_set 5,train_set 6,avg,std_err
 Tree plain,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0
+Tree preprocessing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0
 Tree data augmentation box,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0
-MLP plain,0.71,0.72,0.7,0.7,0.72,0.71,0.71,0.0
-MLP data augmentation box,0.72,0.73,0.74,0.72,0.7,0.72,0.72,0.0
+MLP plain,0.73,0.76,0.72,0.67,0.68,0.69,0.71,0.01
+MLP preprocessing,0.72,0.73,0.73,0.66,0.68,0.68,0.7,0.01
+MLP data augmentation box,0.72,0.75,0.72,0.68,0.68,0.69,0.71,0.01
 Random forest plain,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0
+Random forest preprocessing,1.0,1.0,1.0,1.0,1.0,0.99,1.0,0.0
 Random forest data augmentation box,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0
-SVM plain,0.75,0.72,0.74,0.69,0.73,0.75,0.73,0.01
-SVM data augmentation box,0.75,0.72,0.74,0.69,0.73,0.75,0.73,0.01
-KNeighbors plain,0.79,0.8,0.84,0.79,0.78,0.79,0.8,0.01
-KNeighbors data augmentation box,0.79,0.8,0.84,0.79,0.78,0.79,0.8,0.01
-ADA plain,0.84,0.82,0.84,0.82,0.83,0.82,0.83,0.0
-ADA data augmentation box,0.84,0.83,0.82,0.83,0.8,0.81,0.82,0.01
-GDA plain,0.7,0.66,0.7,0.65,0.66,0.67,0.67,0.01
-GDA data augmentation box,0.72,0.7,0.72,0.69,0.69,0.7,0.7,0.01
-GNB plain,0.7,0.67,0.7,0.64,0.65,0.67,0.67,0.01
-GNB data augmentation box,0.72,0.69,0.72,0.68,0.67,0.69,0.7,0.01
-DANN plain,0.5,0.5,0.5,0.5,0.74,0.5,0.54,0.04
-DANN data augmentation box,0.5,0.5,0.77,0.5,0.5,0.5,0.55,0.04
+KNeighbors plain,0.8,0.79,0.79,0.78,0.78,0.77,0.79,0.0
+KNeighbors preprocessing,0.8,0.79,0.79,0.78,0.78,0.77,0.79,0.0
+KNeighbors data augmentation box,0.8,0.79,0.79,0.78,0.78,0.77,0.79,0.0
+DANN plain,0.5,0.5,0.5,0.5,0.7,0.5,0.53,0.03
+DANN preprocessing,0.5,0.64,0.5,0.5,0.5,0.5,0.52,0.02
+DANN data augmentation box,0.5,0.75,0.5,0.5,0.5,0.5,0.54,0.04

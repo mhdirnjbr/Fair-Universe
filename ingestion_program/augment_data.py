@@ -142,18 +142,21 @@ def generate_augmented_dataset_box_estimate(train_sets):
         min_distance = np.min(np.linalg.norm(X - center, axis=1))
 
         generated_points = []
-        for i in range(num_points):
-            distance = np.random.uniform(min_distance, max_distance)
+        while len(generated_points) < num_points:
+            #distance = np.random.normal(center, max_distance,2)
 
-            angle = np.random.uniform(0, 2 * np.pi)
-
-            x = center[0] + distance * np.cos(angle)
-            y = center[1] + distance * np.sin(angle)
-
-            d = np.absolute(np.linalg.norm([x, y] - center))
-            proba = 1 / (d + 10)
-            decider = np.random.choice([0, 1], p=[1-proba, proba])
-            if (x > max_x or x < min_x or y > max_y or y < min_y) and decider == 0:
+            #angle = np.random.uniform(0, 2 * np.pi)
+            std_x = np.std(X[:, 0])
+            std_y = np.std(X[:, 1])
+            #x = center[0] + distance * np.cos(angle)
+            #y = center[1] + distance * np.sin(angle)
+            x, y = np.random.normal(center, [std_x, std_y], 2)
+            #d = np.absolute(np.linalg.norm([x, y] - center))
+            #alpha = 100
+            #proba = 1 / ((d + 1))
+            #decider = np.random.choice([0, 1], p=[1-proba, proba])
+            #p_not_trigger = np.exp(-alpha * d)
+            if (x > max_x or x < min_x or y > max_y or y < min_y): #and np.random.rand() > p_not_trigger:
                 generated_points.append([x, y])
 
         generated_points = np.array(generated_points)

@@ -253,17 +253,11 @@ class Model:
 
         generated_points = []
         for i in range(num_points):
-            distance = np.random.uniform(min_distance, max_distance)
+            std_x = np.std(X[:, 0])
+            std_y = np.std(X[:, 1])
 
-            angle = np.random.uniform(0, 2 * np.pi)
-
-            x = center[0] + distance * np.cos(angle)
-            y = center[1] + distance * np.sin(angle)
-
-            d = np.absolute(np.linalg.norm([x, y] - center))
-            proba = 1 / (d + 10)
-            decider = np.random.choice([0, 1], p=[1-proba, proba])
-            if (x > max_x or x < min_x or y > max_y or y < min_y) and decider == 0:
+            x, y = np.random.normal(center, [std_x, std_y], 2)
+            if (x > max_x or x < min_x or y > max_y or y < min_y):
                 generated_points.append([x, y])
 
         generated_points = np.array(generated_points)
@@ -283,18 +277,13 @@ class Model:
         min_distance = np.min(np.linalg.norm(X - center, axis=1))
 
         generated_points = []
-        for i in range(num_points):
-            distance = np.random.uniform(min_distance, max_distance)
+        while len(generated_points) < num_points:
+            std_x = np.std(X[:, 0])
+            std_y = np.std(X[:, 1])
 
-            angle = np.random.uniform(0, 2 * np.pi)
+            x, y = np.random.normal(center, [std_x, std_y], 2)
 
-            x = center[0] + distance * np.cos(angle)
-            y = center[1] + distance * np.sin(angle)
-
-            d = np.absolute(np.linalg.norm([x, y] - center))
-            proba = 1 / (d + 10)
-            decider = np.random.choice([0, 1], p=[1-proba, proba])
-            if (x > max_x or x < min_x or y > max_y or y < min_y) and decider == 0:
+            if (x > max_x or x < min_x or y > max_y or y < min_y):
                 generated_points.append([x, y])
 
         generated_points = np.array(generated_points)
@@ -326,7 +315,7 @@ class Model:
                 else:
                     X, y = self._augment_data_scaling()
             if self.model_name == MODEL_DANN:
-                if self.data_augmentation_type == AUGMENTATION_BOX:
+                if self.data_augmentation_type == AUGMENTATION_BOX and self.data_augmentation:
                     X_Trains = torch.tensor(X).float()
                     X_Tests = torch.tensor(Xt).float()
                 else:
@@ -352,11 +341,11 @@ class Model:
             if self.preprocessing:
                 if self.preprocessing_method == PREPROCESS_TRANSLATION:
                     X = self._preprocess_translation()
-                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                    if self.data_augmentation_type == AUGMENTATION_BOX and self.data_augmentation:
                         X = X[:-self.box]
                 else:
                     X = self._preprocess_scaling()
-                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                    if self.data_augmentation_type == AUGMENTATION_BOX and self.data_augmentation:
                         X = X[:-self.box]
 
         if self.model_name == MODEL_CONSTANT:
@@ -381,11 +370,11 @@ class Model:
             if self.preprocessing:
                 if self.preprocessing_method == PREPROCESS_TRANSLATION:
                     X = self._preprocess_translation()
-                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                    if self.data_augmentation_type == AUGMENTATION_BOX and self.data_augmentation:
                         X = X[:-self.box]
                 else:
                     X = self._preprocess_scaling()
-                    if self.data_augmentation_type == AUGMENTATION_BOX:
+                    if self.data_augmentation_type == AUGMENTATION_BOX and self.data_augmentation:
                         X = X[:-self.box]
 
         if self.model_name == MODEL_CONSTANT:
