@@ -6,10 +6,7 @@
 ## Introduction
 This challenge lies in the fact that the distribution of the signal and background clusters can vary significantly between training and test data, with shifts in the center and variance of Gaussian distributions, which makes classification difficult. This problem is known as the domain adaptation problem in machine learning and has been studied extensively in recent years. The objective of this ML challenge is to develop a binary classifier that can accurately classify signal versus background particles in the presence of distribution shift, with the goal of enhancing the accuracy of the detection of the creation of the particle of interest.
 
-In this repo we try to solve this challenge using different methods. This repo was forked from [[here](https://github.com/ihsaan-ullah/fair-universe)].
-
-This repo was used to experminet and try different methodes to solve the challenge. 
-
+In this repo, we attempt to solve this challenge using various methods. This repository was forked from [[here](https://github.com/ihsaan-ullah/fair-universe)].
 
 ## Data
  
