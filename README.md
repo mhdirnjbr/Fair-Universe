@@ -23,6 +23,8 @@ In the following we explain breifly what each file does:
 - `experiment.ipynb`: This file is used to experminet and see the result of implementation of two hand coded methods including GDA, GNB.
 - `sample_code_submission/dann.py`: This file contains the implementation of Domain Adversarial Neural Network (DANN) method which is a deep learning method for domain adaptation according to the following paper by [[this paper](https://arxiv.org/abs/1505.07818)].
 - `sample_code_submission/model.py`: This file contains contains all the baselines used in this challenge.
+- `data_jsons`: This folder contains the configuration of data such as scaling factor, translation vector, meand and std, etc during data generation phase.
+- `sample_data`: This folder contains 6 different data sets for training and testing. Each data set is generated using different configuration of data generation phase.
 
 ## Setup
 1 - **Clone the repo**:
